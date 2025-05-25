@@ -13,15 +13,10 @@ class PostController extends Controller
      */
     public function index()
     {
-
         $TimeInitial = microtime(true);
-
         $posts = Post::all();
-
         $TimeEnding = microtime(true);
-
         $ExecutionTime = $TimeEnding - $TimeInitial;
-
         if ($ExecutionTime < 1) {
         $formatted = number_format($ExecutionTime * 1000, 2);
             $ExecutionTime = "Tempo de execução: {$formatted} ms";
@@ -29,13 +24,11 @@ class PostController extends Controller
             $formatted = number_format($ExecutionTime, 2);
             $ExecutionTime = "Tempo de execução: {$formatted} s";
         }
-
         $content = [
             'memoryUsage' => memory_get_usage(),
             'executionTime' => $ExecutionTime,
             'posts' => $posts,
         ];
-
         return $content;
     }
 
@@ -44,27 +37,21 @@ class PostController extends Controller
      */
     public function create()
     {
-
         $TimeInitial = microtime(true);
-
         $new_post = [
             'title' => 'Meu post',
             'content' => 'conteudo basico',
             'author' => 'Matheus',
         ];
-
         $post = new Post($new_post);
         $post->save();
-
         $TimeEnding = microtime(true);
         $ExecutionTime = $TimeEnding - $TimeInitial;
-
         $content = [
             'posts' => $post,
             'executionTime' => $ExecutionTime,
             'memoryUsage' => memory_get_usage(),
         ];
-
         return $content;
     }
 
@@ -95,7 +82,6 @@ class PostController extends Controller
         'author' => 'Matheus',
             'title' => 'alterado',
         ]);
-
         return $posts;
     }
 
