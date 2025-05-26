@@ -1,40 +1,26 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use App\Http\Controllers\Controller;
 use App\models\Post;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         $TimeInitial = microtime(true);
         $posts = Post::all();
         $TimeEnding = microtime(true);
-        $ExecutionTime = $TimeEnding - $TimeInitial;
-        if ($ExecutionTime < 1) {
-        $formatted = number_format($ExecutionTime * 1000, 2);
-            $ExecutionTime = "Tempo de execução: {$formatted} ms";
-        } else {
-            $formatted = number_format($ExecutionTime, 2);
-            $ExecutionTime = "Tempo de execução: {$formatted} s";
-        }
         $content = [
             'memoryUsage' => memory_get_usage(),
-            'executionTime' => $ExecutionTime,
-            'posts' => $posts,
+            'executionTime' => $this->timeExecution($TimeInitial, $TimeEnding),
+            'postsCount' => count($posts),
+            'posts' => $this->controllReturn($posts),
         ];
         return $content;
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         $TimeInitial = microtime(true);
@@ -46,56 +32,56 @@ class PostController extends Controller
         $post = new Post($new_post);
         $post->save();
         $TimeEnding = microtime(true);
-        $ExecutionTime = $TimeEnding - $TimeInitial;
         $content = [
             'posts' => $post,
-            'executionTime' => $ExecutionTime,
+            'executionTime' => $this->timeExecution($TimeInitial, $TimeEnding),
             'memoryUsage' => memory_get_usage(),
         ];
         return $content;
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function createMass(Request $r)
     {
-        //
+        $TimeInitial = microtime(true);
+        $new_posts = $this->createMassPost(); 
+        Post::insert($new_posts); 
+        $TimeEnding = microtime(true);
+        $content = [
+            'total_posts_inserted' => count($new_posts),
+            'executionTime' => $this->timeExecution($TimeInitial, $TimeEnding),
+            'memoryUsage' => memory_get_usage(),
+        ];
+        return response()->json($content);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    protected function createMassPost()
     {
-        $post = new Post();
-        $post = $post->find($id);
-        return $post;
+        $response = Http::get('https://jsonplaceholder.typicode.com/posts');
+        $posts = $response->json();
+        return array_map(function ($post) {
+            return [
+                'userId'  => $post['userId'],
+                'title'   => $post['title'],
+                'content' => $post['body'],
+                'author'  => 'Matheus',
+            ];
+        }, $posts);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    protected function controllReturn($posts)
     {
-        $posts = Post::find($id)->update([
-        'author' => 'Matheus',
-            'title' => 'alterado',
-        ]);
-        return $posts;
+        return $posts->map(function ($post) {
+            return [
+                'id' => $post->id,
+                'title' => $post->title,
+                'content' => $post->content,
+                'author' => $post->author,
+            ];
+        });
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id) {}
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    protected function timeExecution($timeInitial, $timeEnding)
     {
-        $post = Post::find($id)->delete();
-        return $post;
+        return $timeEnding - $timeInitial;
     }
 }
